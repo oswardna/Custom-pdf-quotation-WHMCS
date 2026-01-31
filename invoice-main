@@ -1,0 +1,319 @@
+<?php
+
+/**
+ * Quote PDF Layout - Matching Invoice Format
+ * 
+ * Key features:
+ * - Orange brand bar at top
+ * - Logo on RIGHT side
+ * - "Quote" title on left
+ * - Quote details below title (left side)
+ * - Two columns: Company info (left) and Quote recipient (right)
+ * - Professional table styling
+ */
+
+# Orange Brand Bar at Top
+$pdf->SetFillColor(247,148,29); // Brand color
+$pdf->Rect(0, 0, 210, 3, 'F'); // Full width bar, 3mm height
+
+# Logo - Top RIGHT Corner
+$logoFilename = 'placeholder.png';
+if (file_exists(ROOTDIR . '/assets/img/logo.png')) {
+    $logoFilename = 'logo.png';
+} elseif (file_exists(ROOTDIR . '/assets/img/logo.jpg')) {
+    $logoFilename = 'logo.jpg';
+} elseif (file_exists(ROOTDIR . '/assets/img/logo.jpeg')) {
+    $logoFilename = 'logo.jpeg';
+}
+
+// Logo sizing - medium sized for right side
+$maxWidth = 45;
+$maxHeight = 20;
+
+list($imgWidthPx, $imgHeightPx) = getimagesize(ROOTDIR . '/assets/img/' . $logoFilename);
+$ratio = min($maxWidth / $imgWidthPx, $maxHeight / $imgHeightPx);
+$pdfWidth  = $imgWidthPx * $ratio;
+$pdfHeight = $imgHeightPx * $ratio;
+
+// Position logo on right side
+$logoX = 210 - 15 - $pdfWidth; // Page width - margin - logo width
+$pdf->Image(ROOTDIR . '/assets/img/' . $logoFilename, $logoX, 12, $pdfWidth, $pdfHeight);
+
+
+# "Quote" Title - Top Left
+$pdf->SetFont($pdfFont, 'B', 20);
+$pdf->SetXY(15, 15);
+$pdf->Cell(100, 10, 'QUOTATION', 0, 1, 'L');
+
+# Quote Details - Left Side (below title)
+$pdf->SetFont($pdfFont, '', 9);
+$detailsY = 35;
+$leftX = 15;
+$lineHeight = 5.5;
+
+// Quote number
+$pdf->SetXY($leftX, $detailsY);
+$pdf->SetFont($pdfFont, 'B', 10);
+$pdf->Cell(35, $lineHeight, 'Quote Number', 0, 0, 'L');
+$pdf->SetFont($pdfFont, 'B', 10);
+$pdf->Cell(60, $lineHeight, $quotenumber, 0, 1, 'L');
+
+// Date created
+$detailsY += $lineHeight;
+$pdf->SetXY($leftX, $detailsY);
+$pdf->SetFont($pdfFont, 'B', 10);
+$pdf->Cell(35, $lineHeight, 'Date Created', 0, 0, 'L');
+$pdf->SetFont($pdfFont, '', 10);
+$pdf->Cell(60, $lineHeight, $datecreated, 0, 1, 'L');
+
+// Valid until
+$detailsY += $lineHeight;
+$pdf->SetXY($leftX, $detailsY);
+$pdf->SetFont($pdfFont, 'B', 10);
+$pdf->Cell(35, $lineHeight, 'Valid Until', 0, 0, 'L');
+$pdf->SetFont($pdfFont, '', 10);
+$pdf->Cell(60, $lineHeight, $validuntil, 0, 1, 'L');
+
+// Company name
+$detailsY += $lineHeight;
+$pdf->SetXY($leftX, $detailsY);
+$pdf->SetFont($pdfFont, 'B', 10);
+$pdf->Cell(35, $lineHeight, 'Company Name', 0, 0, 'L');
+$pdf->SetFont($pdfFont, '', 10);
+$companyNameDisplay = $clientsdetails["companyname"] ? $clientsdetails["companyname"] : 'Individual';
+$pdf->Cell(60, $lineHeight, $companyNameDisplay, 0, 1, 'L');
+
+# Two-Column Section - Company Info (Left) and Quote Recipient (Right)
+$twoColY = $detailsY + $lineHeight + 10; // Gap after quote details
+$col1X = 15;  // Left column - Your company
+$col2X = 110; // Right column - Quote recipient
+
+# LEFT COLUMN: Your Company Details
+$currentY = $twoColY;
+$pdf->SetXY($col1X, $currentY);
+
+// Company name (bold)
+$pdf->SetFont($pdfFont, 'B', 10);
+if (is_array($companyaddress) && !empty($companyaddress[0])) {
+    $pdf->MultiCell(90, $lineHeight, $companyaddress[0], 0, 'L');
+    $currentY += $lineHeight;
+}
+
+// Address lines
+$pdf->SetFont($pdfFont, '', 10);
+if (is_array($companyaddress)) {
+    foreach (array_slice($companyaddress, 1) as $addressLine) {
+        if (trim($addressLine)) {
+            $pdf->SetXY($col1X, $currentY);
+            $pdf->MultiCell(90, $lineHeight, trim($addressLine), 0, 'L');
+            $currentY += $lineHeight;
+        }
+    }
+}
+
+# RIGHT COLUMN: Quote Recipient
+$currentY = $twoColY;
+$pdf->SetXY($col2X, $currentY);
+
+// "Quote Recipient" header (bold)
+$pdf->SetFont($pdfFont, 'B', 10);
+$pdf->Cell(80, $lineHeight, 'Quote Recipient', 0, 1, 'L');
+$currentY += $lineHeight;
+
+// Client Name / Company
+$pdf->SetFont($pdfFont, '', 10);
+
+$clientName = trim($clientsdetails["firstname"] . ' ' . $clientsdetails["lastname"]);
+
+if (!empty($clientsdetails["companyname"])) {
+    // Company name
+    $pdf->SetXY($col2X, $currentY);
+    $pdf->Cell(80, $lineHeight, $clientsdetails["companyname"], 0, 1, 'L');
+    $currentY += $lineHeight;
+} else {
+    // Individual client
+    $pdf->SetXY($col2X, $currentY);
+    $pdf->Cell(80, $lineHeight, $clientName, 0, 1, 'L');
+    $currentY += $lineHeight;
+}
+
+// Address line 1
+if (!empty($clientsdetails["address1"])) {
+    $pdf->SetXY($col2X, $currentY);
+    $pdf->Cell(80, $lineHeight, $clientsdetails["address1"], 0, 1, 'L');
+    $currentY += $lineHeight;
+}
+
+// Address line 2
+if (!empty($clientsdetails["address2"])) {
+    $pdf->SetXY($col2X, $currentY);
+    $pdf->Cell(80, $lineHeight, $clientsdetails["address2"], 0, 1, 'L');
+    $currentY += $lineHeight;
+}
+
+// City, State, Postcode, Country (single line)
+$locationParts = [];
+
+foreach (["city", "state", "postcode", "country"] as $field) {
+    if (!empty($clientsdetails[$field])) {
+        $locationParts[] = $clientsdetails[$field];
+    }
+}
+
+if (!empty($locationParts)) {
+    $pdf->SetXY($col2X, $currentY);
+    $pdf->Cell(80, $lineHeight, implode(', ', $locationParts), 0, 1, 'L');
+    $currentY += $lineHeight;
+}
+
+# Proposal Section (if exists)
+if ($proposal) {
+    $pdf->Ln(12);
+    $pdf->SetFont($pdfFont, 'B', 10);
+    $pdf->Cell(0, 6, 'Proposal', 0, 1, 'L');
+    $pdf->SetFont($pdfFont, '', 9);
+    $pdf->MultiCell(0, 5, $proposal, 0, 'L');
+}
+
+# Total Amount Banner
+$pdf->Ln(12);
+$pdf->SetFont($pdfFont, 'B', 12);
+$pdf->Cell(0, 10, $total . ' Total Quote Amount', 0, 1, 'L');
+
+# Quote Items Table
+$pdf->Ln(8);
+$pdf->SetFont($pdfFont, '', 10);
+
+$tblhtml = '<style>
+    table { 
+        border-collapse: collapse; 
+        width: 100%;
+    }
+    th { 
+        background-color: #f8f9fa; 
+        font-weight: bold; 
+        font-size: 9pt;
+        padding: 12px 10px;
+        border-top: 2px solid #dee2e6;
+        border-bottom: 2px solid #dee2e6;
+        color: #495057;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    td { 
+        padding: 12px 10px; 
+        font-size: 10pt;
+        border-bottom: 1px solid #f1f3f5;
+        color: #212529;
+        vertical-align: top;
+    }
+    tr:hover td {
+        background-color: #f8f9fa;
+    }
+    .total-row {
+        background-color: #ffffff;
+        font-weight: normal;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .total-row td {
+        padding: 10px 10px;
+        font-size: 10pt;
+    }
+    .subtotal-row {
+        border-top: 2px solid #dee2e6;
+        padding-top: 8px;
+    }
+    .final-total {
+        background-color: #f8f9fa;
+        font-weight: bold;
+        border-top: 2px solid #495057;
+        border-bottom: 2px solid #495057;
+    }
+    .final-total td {
+        padding: 14px 10px;
+        font-size: 11pt;
+        color: #212529;
+    }
+    .item-description {
+        line-height: 1.5;
+    }
+</style>
+<table width="100%" cellspacing="0" cellpadding="0">
+    <tr>
+        <th width="45%" align="left">DESCRIPTION</th>
+        <th width="12%" align="center">QTY</th>
+        <th width="18%" align="center">UNIT PRICE</th>
+        <th width="12%" align="center">DISCOUNT</th>
+        <th width="13%" align="right">AMOUNT</th>
+    </tr>';
+
+// Quote items
+foreach ($lineitems as $item) {
+    $description = strip_tags($item['description']);
+    $description = str_replace("\n", '<br/>', $description);
+    
+    $tblhtml .= '
+    <tr>
+        <td align="left" class="item-description">' . $description . '</td>
+        <td align="center">' . $item['qty'] . '</td>
+        <td align="center">' . $item['unitprice'] . '</td>
+        <td align="center">' . ($item['discount'] ? $item['discount'] : '—') . '</td>
+        <td align="right"><strong>' . $item['total'] . '</strong></td>
+    </tr>';
+}
+
+// Summary rows - Subtotal
+$tblhtml .= '
+    <tr class="total-row subtotal-row">
+        <td colspan="4" align="right" style="padding-top: 16px; padding-bottom: 8px;">Subtotal</td>
+        <td align="right" style="padding-top: 16px; padding-bottom: 8px;"><strong>' . $subtotal . '</strong></td>
+    </tr>';
+
+// Tax level 1
+if ($taxlevel1['rate'] > 0) {
+    $taxLabel = $taxlevel1['name'] . ' @ ' . $taxlevel1['rate'] . '%';
+    $tblhtml .= '
+    <tr class="total-row">
+        <td colspan="4" align="right">' . $taxLabel . '</td>
+        <td align="right">' . $tax1 . '</td>
+    </tr>';
+}
+
+// Tax level 2
+if ($taxlevel2['rate'] > 0) {
+    $taxLabel2 = $taxlevel2['name'] . ' @ ' . $taxlevel2['rate'] . '%';
+    $tblhtml .= '
+    <tr class="total-row">
+        <td colspan="4" align="right">' . $taxLabel2 . '</td>
+        <td align="right">' . $tax2 . '</td>
+    </tr>';
+}
+
+// Final Total
+$tblhtml .= '
+    <tr class="final-total">
+        <td colspan="4" align="right">TOTAL</td>
+        <td align="right">' . $total . '</td>
+    </tr>
+</table>';
+
+$pdf->writeHTML($tblhtml, true, false, false, false, '');
+
+# Support Information
+$pdf->Ln(8);
+$pdf->SetFont($pdfFont, '', 10);
+$pdf->SetTextColor(100, 100, 100);
+$supportText = 'For inquiries about this quote, please contact us through info@palnode.com';
+$pdf->MultiCell(0, 4, $supportText, 0, 'L');
+$pdf->SetTextColor(0, 0, 0);
+
+# Notes
+if ($notes) {
+    $pdf->Ln(6);
+    $pdf->SetFont($pdfFont, '', 8);
+    $pdf->SetTextColor(100, 100, 100);
+    $pdf->MultiCell(0, 4, 'Notes: ' . $notes, 0, 'L');
+    $pdf->SetTextColor(0, 0, 0);
+}
+
+?>
