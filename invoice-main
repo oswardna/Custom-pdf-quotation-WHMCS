@@ -178,7 +178,7 @@ if ($proposal) {
 # Total Amount Banner
 $pdf->Ln(12);
 $pdf->SetFont($pdfFont, 'B', 12);
-$pdf->Cell(0, 10, $total . ' Total Quote Amount', 0, 1, 'L');
+$pdf->Cell(0, 10, $total . ' Total Quotation Amount', 0, 1, 'L');
 
 # Quote Items Table
 $pdf->Ln(8);
