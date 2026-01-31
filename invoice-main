@@ -74,6 +74,14 @@ $pdf->Cell(35, $lineHeight, 'Valid Until', 0, 0, 'L');
 $pdf->SetFont($pdfFont, '', 10);
 $pdf->Cell(60, $lineHeight, $validuntil, 0, 1, 'L');
 
+// Subject
+$detailsY += $lineHeight;
+$pdf->SetXY($leftX, $detailsY);
+$pdf->SetFont($pdfFont, 'B', 10);
+$pdf->Cell(35, $lineHeight, 'Subject', 0, 0, 'L');
+$pdf->SetFont($pdfFont, '', 10);
+$pdf->Cell(60, $lineHeight, $subject, 0, 1, 'L');
+
 // Company name
 $detailsY += $lineHeight;
 $pdf->SetXY($leftX, $detailsY);
